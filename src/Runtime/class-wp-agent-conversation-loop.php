@@ -541,6 +541,7 @@ class WP_Agent_Conversation_Loop {
 		$events                 = array();
 		$spin_signatures        = array();
 		$complete               = false;
+		$completion_stop_recorded = false;
 		$exceeded_budget        = null;
 		$approval_required      = null;
 		$runtime_tool_pending   = null;
@@ -875,16 +876,18 @@ class WP_Agent_Conversation_Loop {
 
 				if ( $decision->isComplete() ) {
 					$complete = true;
-					$events[] = array(
-						'type'     => 'completion_policy_stop',
-						'metadata' => array(
-							'tool_name' => $tool_name,
-							'turn'      => $turn,
-							'message'   => $decision->message(),
-							'context'   => $decision->context(),
-						),
-					);
-					break;
+					if ( ! $completion_stop_recorded ) {
+						$events[] = array(
+							'type'     => 'completion_policy_stop',
+							'metadata' => array(
+								'tool_name' => $tool_name,
+								'turn'      => $turn,
+								'message'   => $decision->message(),
+								'context'   => $decision->context(),
+							),
+						);
+						$completion_stop_recorded = true;
+					}
 				}
 
 				$continuation = self::completion_policy_continuation( $decision, $tool_name, $turn );
