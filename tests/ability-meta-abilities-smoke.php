@@ -112,49 +112,83 @@ if ( ! function_exists( 'wp_get_abilities' ) ) {
 }
 
 agents_api_smoke_require_module();
+add_action(
+	'wp_abilities_api_categories_init',
+	static function (): void {
+		if ( ! wp_has_ability_category( 'demo-tools' ) ) {
+			wp_register_ability_category(
+				'demo-tools',
+				array(
+					'label'       => 'Demo Tools',
+					'description' => 'Demo tool abilities for smoke coverage.',
+				)
+			);
+		}
+
+		if ( ! wp_has_ability_category( 'content' ) ) {
+			wp_register_ability_category(
+				'content',
+				array(
+					'label'       => 'Content',
+					'description' => 'Demo content abilities for smoke coverage.',
+				)
+			);
+		}
+	}
+);
+
+add_action(
+	'wp_abilities_api_init',
+	static function (): void {
+		if ( ! wp_has_ability( 'demo/weather-forecast' ) ) {
+			wp_register_ability(
+				'demo/weather-forecast',
+				array(
+					'label'               => 'Weather Forecast',
+					'description'         => 'Fetch a local weather forecast for a city.',
+					'category'            => 'demo-tools',
+					'input_schema'        => array(
+						'type'       => 'object',
+						'required'   => array( 'city' ),
+						'properties' => array(
+							'city' => array( 'type' => 'string' ),
+						),
+					),
+					'execute_callback'    => static function ( array $input ): array {
+						return array( 'forecast' => 'sunny in ' . ( $input['city'] ?? '' ) );
+					},
+					'permission_callback' => static function (): bool {
+						return true;
+					},
+				)
+			);
+		}
+
+		if ( ! wp_has_ability( 'demo/publish-post' ) ) {
+			wp_register_ability(
+				'demo/publish-post',
+				array(
+					'label'               => 'Publish Post',
+					'description'         => 'Publish a draft post by ID.',
+					'category'            => 'content',
+					'input_schema'        => array(
+						'type'     => 'object',
+						'required' => array( 'post_id' ),
+					),
+					'execute_callback'    => static function ( array $input ): array {
+						return array( 'published' => (int) ( $input['post_id'] ?? 0 ) );
+					},
+					'permission_callback' => static function (): bool {
+						return true;
+					},
+				)
+			);
+		}
+	}
+);
+
 do_action( 'wp_abilities_api_categories_init' );
 do_action( 'wp_abilities_api_init' );
-
-wp_register_ability(
-	'demo/weather-forecast',
-	array(
-		'label'               => 'Weather Forecast',
-		'description'         => 'Fetch a local weather forecast for a city.',
-		'category'            => 'demo-tools',
-		'input_schema'        => array(
-			'type'       => 'object',
-			'required'   => array( 'city' ),
-			'properties' => array(
-				'city' => array( 'type' => 'string' ),
-			),
-		),
-		'execute_callback'    => static function ( array $input ): array {
-			return array( 'forecast' => 'sunny in ' . ( $input['city'] ?? '' ) );
-		},
-		'permission_callback' => static function (): bool {
-			return true;
-		},
-	)
-);
-
-wp_register_ability(
-	'demo/publish-post',
-	array(
-		'label'               => 'Publish Post',
-		'description'         => 'Publish a draft post by ID.',
-		'category'            => 'content',
-		'input_schema'        => array(
-			'type'     => 'object',
-			'required' => array( 'post_id' ),
-		),
-		'execute_callback'    => static function ( array $input ): array {
-			return array( 'published' => (int) ( $input['post_id'] ?? 0 ) );
-		},
-		'permission_callback' => static function (): bool {
-			return true;
-		},
-	)
-);
 
 echo "\n[1] Meta-abilities register in canonical namespace:\n";
 agents_api_smoke_assert_equals( true, wp_has_ability( 'agents/ability-search' ), 'ability-search is registered', $failures, $passes );
