@@ -22,28 +22,44 @@ $GLOBALS['__agents_api_smoke_current_user_id'] = 7;
 $GLOBALS['__agents_api_smoke_abilities']       = array();
 $GLOBALS['__agents_api_smoke_categories']      = array();
 
-function get_current_user_id(): int {
-	return (int) $GLOBALS['__agents_api_smoke_current_user_id'];
+if ( function_exists( 'wp_set_current_user' ) ) {
+	wp_set_current_user( 7 );
 }
 
-function is_user_logged_in(): bool {
-	return get_current_user_id() > 0;
+if ( ! function_exists( 'get_current_user_id' ) ) {
+	function get_current_user_id(): int {
+		return (int) $GLOBALS['__agents_api_smoke_current_user_id'];
+	}
 }
 
-function wp_has_ability_category( string $category ): bool {
-	return isset( $GLOBALS['__agents_api_smoke_categories'][ $category ] );
+if ( ! function_exists( 'is_user_logged_in' ) ) {
+	function is_user_logged_in(): bool {
+		return get_current_user_id() > 0;
+	}
 }
 
-function wp_register_ability_category( string $category, array $args ): void {
-	$GLOBALS['__agents_api_smoke_categories'][ $category ] = $args;
+if ( ! function_exists( 'wp_has_ability_category' ) ) {
+	function wp_has_ability_category( string $category ): bool {
+		return isset( $GLOBALS['__agents_api_smoke_categories'][ $category ] );
+	}
 }
 
-function wp_has_ability( string $ability ): bool {
-	return isset( $GLOBALS['__agents_api_smoke_abilities'][ $ability ] );
+if ( ! function_exists( 'wp_register_ability_category' ) ) {
+	function wp_register_ability_category( string $category, array $args ): void {
+		$GLOBALS['__agents_api_smoke_categories'][ $category ] = $args;
+	}
 }
 
-function wp_register_ability( string $ability, array $args ): void {
-	$GLOBALS['__agents_api_smoke_abilities'][ $ability ] = $args;
+if ( ! function_exists( 'wp_has_ability' ) ) {
+	function wp_has_ability( string $ability ): bool {
+		return isset( $GLOBALS['__agents_api_smoke_abilities'][ $ability ] );
+	}
+}
+
+if ( ! function_exists( 'wp_register_ability' ) ) {
+	function wp_register_ability( string $ability, array $args ): void {
+		$GLOBALS['__agents_api_smoke_abilities'][ $ability ] = $args;
+	}
 }
 
 agents_api_smoke_require_module();
@@ -209,6 +225,9 @@ $ability_list = AgentsAPI\AI\Auth\agents_list_accessible_agents( array( 'workspa
 agents_api_smoke_assert_equals( 'editor-agent', $ability_list['agents'][0]['slug'] ?? null, 'list-accessible ability returns granted registered agent', $failures, $passes );
 
 $GLOBALS['__agents_api_smoke_current_user_id'] = 0;
+if ( function_exists( 'wp_set_current_user' ) ) {
+	wp_set_current_user( 0 );
+}
 add_filter(
 	'agents_api_execution_principal',
 	static function ( $principal, array $context ) {
