@@ -11,32 +11,38 @@ if ( ! defined( 'ABSPATH' ) ) {
 	define( 'ABSPATH', __DIR__ . '/' );
 }
 
-class WP_Error {
-	public function __construct( private string $code = '', private string $message = '', private $data = null ) {}
-	public function get_error_code(): string { return $this->code; }
-	public function get_error_message(): string { return $this->message; }
-	public function get_error_data() { return $this->data; }
+if ( ! class_exists( 'WP_Error' ) ) {
+	class WP_Error {
+		public function __construct( private string $code = '', private string $message = '', private $data = null ) {}
+		public function get_error_code(): string { return $this->code; }
+		public function get_error_message(): string { return $this->message; }
+		public function get_error_data() { return $this->data; }
+	}
 }
 
-class WP_Ability_Category {}
+if ( ! class_exists( 'WP_Ability_Category' ) ) {
+	class WP_Ability_Category {}
+}
 
-class WP_Ability {
-	public function __construct( private string $name, private array $args ) {}
-	public function get_name(): string { return $this->name; }
-	public function get_label(): string { return (string) ( $this->args['label'] ?? '' ); }
-	public function get_description(): string { return (string) ( $this->args['description'] ?? '' ); }
-	public function get_category(): string { return (string) ( $this->args['category'] ?? '' ); }
-	public function get_input_schema(): array { return isset( $this->args['input_schema'] ) && is_array( $this->args['input_schema'] ) ? $this->args['input_schema'] : array(); }
-	public function get_output_schema(): array { return isset( $this->args['output_schema'] ) && is_array( $this->args['output_schema'] ) ? $this->args['output_schema'] : array(); }
-	public function get_meta_item( string $key, $default = null ) { return $this->args['meta'][ $key ] ?? $default; }
-	public function execute( $input = null ) {
-		$permission = $this->args['permission_callback'] ?? null;
-		if ( is_callable( $permission ) && true !== call_user_func( $permission, is_array( $input ) ? $input : array() ) ) {
-			return new WP_Error( 'ability_invalid_permissions', 'Permission denied.' );
+if ( ! class_exists( 'WP_Ability' ) ) {
+	class WP_Ability {
+		public function __construct( private string $name, private array $args ) {}
+		public function get_name(): string { return $this->name; }
+		public function get_label(): string { return (string) ( $this->args['label'] ?? '' ); }
+		public function get_description(): string { return (string) ( $this->args['description'] ?? '' ); }
+		public function get_category(): string { return (string) ( $this->args['category'] ?? '' ); }
+		public function get_input_schema(): array { return isset( $this->args['input_schema'] ) && is_array( $this->args['input_schema'] ) ? $this->args['input_schema'] : array(); }
+		public function get_output_schema(): array { return isset( $this->args['output_schema'] ) && is_array( $this->args['output_schema'] ) ? $this->args['output_schema'] : array(); }
+		public function get_meta_item( string $key, $default = null ) { return $this->args['meta'][ $key ] ?? $default; }
+		public function execute( $input = null ) {
+			$permission = $this->args['permission_callback'] ?? null;
+			if ( is_callable( $permission ) && true !== call_user_func( $permission, is_array( $input ) ? $input : array() ) ) {
+				return new WP_Error( 'ability_invalid_permissions', 'Permission denied.' );
+			}
+
+			$callback = $this->args['execute_callback'] ?? null;
+			return is_callable( $callback ) ? call_user_func( $callback, is_array( $input ) ? $input : array() ) : null;
 		}
-
-		$callback = $this->args['execute_callback'] ?? null;
-		return is_callable( $callback ) ? call_user_func( $callback, is_array( $input ) ? $input : array() ) : null;
 	}
 }
 
@@ -51,36 +57,58 @@ $GLOBALS['__agents_api_smoke_abilities']          = array();
 $GLOBALS['__agents_api_smoke_ability_categories'] = array();
 $GLOBALS['__agents_api_smoke_can']                = true;
 
-function current_user_can( string $capability ): bool {
-	unset( $capability );
-	return (bool) $GLOBALS['__agents_api_smoke_can'];
+if ( function_exists( 'current_user_can' ) ) {
+	add_filter(
+		'user_has_cap',
+		static function ( array $allcaps ): array {
+			$allcaps['manage_options'] = (bool) $GLOBALS['__agents_api_smoke_can'];
+			return $allcaps;
+		}
+	);
+} else {
+	function current_user_can( string $capability ): bool {
+		unset( $capability );
+		return (bool) $GLOBALS['__agents_api_smoke_can'];
+	}
 }
 
-function wp_has_ability_category( string $slug ): bool {
-	return isset( $GLOBALS['__agents_api_smoke_ability_categories'][ $slug ] );
+if ( ! function_exists( 'wp_has_ability_category' ) ) {
+	function wp_has_ability_category( string $slug ): bool {
+		return isset( $GLOBALS['__agents_api_smoke_ability_categories'][ $slug ] );
+	}
 }
 
-function wp_register_ability_category( string $slug, array $args ): ?WP_Ability_Category {
-	$GLOBALS['__agents_api_smoke_ability_categories'][ $slug ] = $args;
-	return null;
+if ( ! function_exists( 'wp_register_ability_category' ) ) {
+	function wp_register_ability_category( string $slug, array $args ): ?WP_Ability_Category {
+		$GLOBALS['__agents_api_smoke_ability_categories'][ $slug ] = $args;
+		return null;
+	}
 }
 
-function wp_has_ability( string $name ): bool {
-	return isset( $GLOBALS['__agents_api_smoke_abilities'][ $name ] );
+if ( ! function_exists( 'wp_has_ability' ) ) {
+	function wp_has_ability( string $name ): bool {
+		return isset( $GLOBALS['__agents_api_smoke_abilities'][ $name ] );
+	}
 }
 
-function wp_register_ability( string $name, array $args ): ?WP_Ability {
-	$ability = new WP_Ability( $name, $args );
-	$GLOBALS['__agents_api_smoke_abilities'][ $name ] = $ability;
-	return $ability;
+if ( ! function_exists( 'wp_register_ability' ) ) {
+	function wp_register_ability( string $name, array $args ): ?WP_Ability {
+		$ability = new WP_Ability( $name, $args );
+		$GLOBALS['__agents_api_smoke_abilities'][ $name ] = $ability;
+		return $ability;
+	}
 }
 
-function wp_get_ability( string $name ): ?WP_Ability {
-	return $GLOBALS['__agents_api_smoke_abilities'][ $name ] ?? null;
+if ( ! function_exists( 'wp_get_ability' ) ) {
+	function wp_get_ability( string $name ): ?WP_Ability {
+		return $GLOBALS['__agents_api_smoke_abilities'][ $name ] ?? null;
+	}
 }
 
-function wp_get_abilities(): array {
-	return array_values( $GLOBALS['__agents_api_smoke_abilities'] );
+if ( ! function_exists( 'wp_get_abilities' ) ) {
+	function wp_get_abilities(): array {
+		return array_values( $GLOBALS['__agents_api_smoke_abilities'] );
+	}
 }
 
 agents_api_smoke_require_module();
