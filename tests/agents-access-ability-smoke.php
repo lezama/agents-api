@@ -64,6 +64,25 @@ if ( ! function_exists( 'wp_register_ability' ) ) {
 
 agents_api_smoke_require_module();
 
+add_filter(
+	'agents_api_execution_principal',
+	static function ( $principal, array $context ) {
+		if ( (int) $GLOBALS['__agents_api_smoke_current_user_id'] <= 0 ) {
+			return $principal;
+		}
+
+		return AgentsAPI\AI\WP_Agent_Execution_Principal::user_session(
+			(int) $GLOBALS['__agents_api_smoke_current_user_id'],
+			'user-session',
+			$context['request_context'] ?? AgentsAPI\AI\WP_Agent_Execution_Principal::REQUEST_CONTEXT_REST,
+			array( 'source' => 'smoke-test' ),
+			$context['workspace_id'] ?? null
+		);
+	},
+	10,
+	2
+);
+
 add_action(
 	'wp_agents_api_init',
 	static function (): void {
