@@ -429,6 +429,29 @@ function agents_chat_input_schema(): array {
 						'type'        => 'boolean',
 						'description' => 'Whether this turn is an explicit agent-to-agent delegation call.',
 					),
+					'runtime_tools'            => array(
+						'type'                 => 'object',
+						'description'          => 'Explicit runtime-local tool declarations supplied by a trusted caller for this turn.',
+						'additionalProperties' => array( 'type' => 'object' ),
+					),
+					'runtime_tool_declarations' => array(
+						'type'                 => 'object',
+						'description'          => 'Alias for explicit runtime-local tool declarations supplied by a trusted caller for this turn.',
+						'additionalProperties' => array( 'type' => 'object' ),
+					),
+					'tool_declarations'       => array(
+						'type'                 => 'object',
+						'description'          => 'Transport-level tool declarations supplied by a trusted caller for this turn.',
+						'additionalProperties' => array( 'type' => 'object' ),
+					),
+					'runtime_tool_callback'   => array(
+						'type'        => 'string',
+						'description' => 'Runtime-local callback identifier for executing runtime tool calls in trusted in-process callers.',
+					),
+					'runtime_tool_timeout'    => array(
+						'type'        => 'integer',
+						'description' => 'Runtime-local tool timeout in seconds.',
+					),
 				),
 			),
 		),
